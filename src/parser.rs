@@ -48,6 +48,12 @@ pub trait Parser: BufRead {
                 Err(e) => return Err(ParserError::Io(e)),
             };
             let buf_size = buf.len();
+            if buf_size == 0 {
+                return Err(ParserError::Io(io::Error::new(
+                    io::ErrorKind::UnexpectedEof,
+                    "Unexpected EOF",
+                )));
+            }
             match buf
                 .iter()
                 .position(|&x| matches!(x, b' ' | b'\n' | b'\r' | b'\t'))
