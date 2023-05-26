@@ -1,9 +1,10 @@
-use std::env;
+use rusqlite::{params, Connection};
 use std::error::Error;
 use std::fs::File;
 use std::io::{stdout, Write};
 use std::iter::Iterator;
 use std::time::Instant;
+use std::{env, fs};
 
 pub type Result<T> = std::result::Result<T, Box<dyn Error>>;
 
@@ -121,6 +122,22 @@ where
     }
     writeln!(fout)?;
     writeln!(fout, "Score: {}/{}", tc_ok, tc_n)?;
+    match (
+        fetch_env("TAL_META_EXP_TOKEN"),
+        fetch_env("TAL_EXT_EXAM_DB"),
+    ) {
+        (Ok(token), Ok(db_path)) => {
+            let conn = Connection::open(db_path)?;
+            let problem = fetch_env("TAL_META_CODENAME")?;
+            let address = fetch_env("TAL_META_EXP_ADDRESS")?;
+            let source = fs::read(format!("{}/source", fetch_env("TAL_META_INPUT_FILES")?))?;
+            conn.execute(
+                "INSERT INTO submissions (user_id, problem, address, score, source) VALUES (?1, ?2, ?3, ?4, ?5)",
+                params![token, problem, address, tc_ok, source],
+            )?;
+        }
+        _ => {}
+    };
     Ok(())
 }
 
