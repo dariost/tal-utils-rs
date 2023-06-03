@@ -42,7 +42,7 @@ impl From<f64> for RunOptions {
     fn from(time_limit: f64) -> Self {
         RunOptions {
             time_limit,
-            public_wall_time: false,
+            public_wall_time: true,
         }
     }
 }
@@ -51,7 +51,7 @@ impl Default for RunOptions {
     fn default() -> Self {
         RunOptions {
             time_limit: 1.0,
-            public_wall_time: false,
+            public_wall_time: true,
         }
     }
 }
