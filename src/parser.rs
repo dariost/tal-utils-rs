@@ -36,7 +36,10 @@ where
 impl<T: FromStr> std::error::Error for ParserError<T> where <T as FromStr>::Err: fmt::Display {}
 
 pub trait Parser: BufRead {
-    fn get<T: FromStr>(&mut self) -> Result<T, ParserError<T>>
+    fn get_until<T: FromStr, U: FnMut(&u8) -> bool>(
+        &mut self,
+        mut pred: U,
+    ) -> Result<String, ParserError<T>>
     where
         <T as FromStr>::Err: fmt::Display,
     {
@@ -54,10 +57,7 @@ pub trait Parser: BufRead {
                     "Unexpected EOF",
                 )));
             }
-            match buf
-                .iter()
-                .position(|&x| matches!(x, b' ' | b'\n' | b'\r' | b'\t'))
-            {
+            match buf.iter().position(&mut pred) {
                 Some(0) if buffer.is_empty() => {
                     self.consume(1);
                 }
@@ -73,6 +73,14 @@ pub trait Parser: BufRead {
             }
         }
         let s = String::from_utf8(buffer).map_err(ParserError::Utf8)?;
+        Ok(s)
+    }
+
+    fn get<T: FromStr>(&mut self) -> Result<T, ParserError<T>>
+    where
+        <T as FromStr>::Err: fmt::Display,
+    {
+        let s = self.get_until(|&x| matches!(x, b' ' | b'\n' | b'\r' | b'\t'))?;
         s.parse().map_err(ParserError::Parse)
     }
 
